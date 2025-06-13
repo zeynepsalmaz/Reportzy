@@ -52,3 +52,15 @@ class AIInsights(Base):
     insight_text = Column(Text)
     confidence_score = Column(Float)  # 0.0 to 1.0
     created_at = Column(DateTime, default=func.current_timestamp())
+
+class DeletionLog(Base):
+    __tablename__ = "deletion_logs"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    dataset_name = Column(String(255), nullable=False)
+    table_name = Column(String(255), nullable=False)
+    file_name = Column(String(255))
+    row_count = Column(Integer)
+    column_count = Column(Integer)
+    deleted_at = Column(DateTime, default=func.current_timestamp())
+    deleted_items = Column(JSON)  # Details about what was deleted

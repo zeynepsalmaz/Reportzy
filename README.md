@@ -1,364 +1,316 @@
-# 🚀 Reportzy Analytics Platform
+# Reportzy - AI-Powered Data Analytics Platform
 
-A modern analytics platform that allows users to upload Excel/CSV files, automatically re## 🏗️ Architecture
+A modern, full-stack analytics platform that transforms raw data into actionable insights using AI. Built with a professional tech stack featuring Next.js, TypeScript, Python FastAPI, and AI integration.
 
-```
-📁 Reportzy/
-├── 🚀 app/
-│   ├── __init__.py         # Package initialization
-│   ├── main.py             # FastAPI application & routing
-│   ├── db.py               # Database connection & initialization  
-│   ├── models.py           # SQLAlchemy data models
-│   ├── file_upload.py      # File upload & table creation
-│   ├── ai_insights.py      # AI analysis & recommendations
-│   ├── ask.py              # Natural language SQL interface
-│   ├── metadata.py         # Table metadata management
-│   └── export.py           # Data export functionality
-├── 📊 dashboard.html       # Modern frontend dashboard
-├── 🔧 requirements.txt     # Python dependencies
-├── 🚀 start.sh            # Application startup script
-├── 🧪 test_endpoints.py   # API endpoint testing script
-├── 📖 README.md           # Project documentation (this file)
-├── 🗄️ reportzy.db         # SQLite database (auto-generated)
-└── 📁 venv/               # Virtual environment (auto-generated)
-``` database tables, and generate AI-powered SQL queries and visualizations. Features a professional UX-friendly dashboard with sidebar navigation, query history, and AI insights.
+## 🚀 Features
 
-## ✨ Key Features
+### Core Functionality
+- **Smart Data Import**: Upload CSV/Excel files with intelligent parsing and validation
+- **AI-Powered Analytics**: Natural language queries to explore your data
+- **Interactive Visualizations**: Dynamic charts and graphs generated from your questions
+- **Dataset Management**: Preview, organize, and manage your datasets with ease
+- **API Integration**: Connect external data sources seamlessly
+- **Insights Generation**: Automated pattern detection and anomaly analysis
 
-### 📁 File Upload & Data Management
-- Upload Excel (.xlsx) and CSV files
-- Automatic table creation with proper SQLite schema  
-- Clean column name handling (spaces, special chars)
-- File metadata tracking and status monitoring
-
-### 🧠 AI-Powered Analytics
-- Natural language to SQL conversion using Google Gemini
-- Smart query suggestions based on uploaded data
-- AI-generated insights and recommendations
-- Data health analysis and quality checks
-
-### 📊 Professional Dashboard
-- Modern sidebar-based navigation
-- Real-time active table counting (user data only)
-- Query history with success/failure tracking
-- File upload interface with drag-and-drop
-- AI insights panel with actionable recommendations
-
-### 🔧 API-First Architecture
-- RESTful API endpoints for all functionality
-- File upload via multipart/form-data
-- JSON responses with detailed metadata
-- Future-ready API integration endpoint placeholder
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.8+
-- SQLite (automatically created)
-- Google Gemini API key (for AI features)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Reportzy
-   ```
-
-2. **Create virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables**
-   ```bash
-   # Create .env file with:
-   GOOGLE_API_KEY=your_google_api_key_here
-   DATABASE_URL=sqlite:///./reportzy.db
-   ```
-
-5. **Run the application**
-   ```bash
-   # Using the start script (recommended):
-   chmod +x start.sh
-   ./start.sh
-   
-   # Or manually:
-   uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
-   ```
-
-6. **Access the application**
-   - **Dashboard**: http://localhost:8001/dashboard
-   - **API Documentation**: http://localhost:8001/docs
-   - **Health Check**: http://localhost:8001/health
-
-## 📖 API Usage Examples
-
-### File Upload
-```bash
-# Upload a CSV file
-curl -X POST "http://localhost:8001/api/upload" \
-  -H "accept: application/json" \
-  -F "file=@your_data.csv" \
-  -F "dataset_name=my_dataset"
-
-# Response:
-{
-  "success": true,
-  "message": "File uploaded successfully",
-  "dataset_id": 1,
-  "table_name": "my_dataset",
-  "rows_processed": 100,
-  "columns_processed": 5
-}
-```
-
-### List Datasets
-```bash
-# Get all uploaded datasets
-curl "http://localhost:8001/api/datasets"
-
-# Response includes dataset metadata, table names, row counts
-```
-
-### Natural Language Queries
-```bash
-# Ask questions about your data
-curl -X POST "http://localhost:8001/api/ask" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Show me the top 10 records from my dataset"}'
-
-# Response includes SQL query, results, and chart suggestions
-```
-
-### AI Insights Generation
-```bash
-# Generate AI insights for uploaded dataset
-curl -X POST "http://localhost:8001/api/generate-insights/1"
-
-# Response includes data statistics and AI recommendations
-```
-
-### Get Analytics Summary
-```bash
-# Get dashboard summary (active tables, suggestions)
-curl "http://localhost:8001/api/analytics-summary"
-```
+### Modern UI/UX
+- **Responsive Design**: Works perfectly on desktop, tablet, and mobile
+- **Professional Interface**: Clean, modern design with shadcn/ui components
+- **Dark/Light Mode**: Theme support (configurable)
+- **Modular Components**: Fully componentized React architecture
+- **Type Safety**: Full TypeScript coverage for reliability
+- **Accessibility**: WCAG compliant interface
 
 ## 🏗️ Architecture
 
+### Frontend (Next.js 14 + TypeScript)
 ```
-📁 app/
-├── 🚀 main.py              # FastAPI application & routing
-├── 🗄️  db.py               # Database connection & initialization  
-├── � models.py            # SQLAlchemy data models
-├── � file_upload.py       # File upload & table creation
-├── 🧠 ai_insights.py       # AI analysis & recommendations
-├── 🤖 ask.py              # Natural language SQL interface
-├── 🗂️  metadata.py         # Table metadata management
-├── � export.py           # Data export functionality
-└── � dashboard.html      # Modern frontend dashboard
+frontend/
+├── src/
+│   ├── app/                 # Next.js App Router
+│   │   ├── layout.tsx       # Root layout
+│   │   └── page.tsx         # Main application
+│   ├── components/          # React components
+│   │   ├── ui/              # shadcn/ui components
+│   │   ├── Dashboard.tsx    # Main dashboard
+│   │   ├── ImportData.tsx   # Data upload interface
+│   │   ├── APIConnect.tsx   # API integration
+│   │   ├── AIInsights.tsx   # AI analytics interface
+│   │   ├── Sidebar.tsx      # Navigation sidebar
+│   │   ├── Header.tsx       # Top navigation
+│   │   └── modals/          # Modal components
+│   ├── types/               # TypeScript interfaces
+│   └── styles/              # Global styles (Tailwind + SASS)
 ```
 
-## 🔗 API Endpoints
+### Backend (Python FastAPI)
+```
+backend/
+├── main.py              # FastAPI application entry
+├── db.py               # Database configuration
+├── models.py           # SQLAlchemy models
+├── analytics.py        # Data processing
+├── export.py           # Data export functionality
+├── feedback.py         # User feedback system
+├── ingest.py           # Data ingestion
+├── metadata.py         # Dataset metadata
+└── monitoring.py       # System monitoring
+```
 
-### Core Endpoints
-- `GET /` - API information
-- `GET /health` - Health check
-- `GET /dashboard` - Analytics dashboard UI
+### AI Layer (Python)
+```
+ai/
+├── ask.py              # Natural language query processing
+├── ai_insights.py      # Automated insights generation
+└── ai_multilang.py     # Multi-language AI support
+```
 
-### File & Data Management  
-- `POST /api/upload` - Upload Excel/CSV files
-- `GET /api/datasets` - List uploaded datasets
-- `GET /api/dataset/{dataset_id}/preview` - Preview dataset
-- `DELETE /api/dataset/{dataset_id}` - Delete dataset
-- `POST /api/api-integration` - API integration endpoint
-- `GET /api/analytics-summary` - Dashboard summary data
-- `GET /api/metadata` - Table metadata management
+## 🛠️ Tech Stack
 
-## 🔗 API Endpoints
+### Frontend
+- **Next.js 14**: React framework with App Router
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first styling
+- **shadcn/ui**: High-quality UI components
+- **SASS**: Advanced styling capabilities
+- **Lucide Icons**: Modern icon system
 
-### Core Endpoints
-- `GET /` - API information
-- `GET /health` - Health check
-- `GET /dashboard` - Analytics dashboard UI
-
-### File & Data Management  
-- `POST /api/upload` - Upload Excel/CSV files
-- `GET /api/datasets` - List uploaded datasets
-- `GET /api/dataset/{dataset_id}/preview` - Preview dataset
-- `DELETE /api/dataset/{dataset_id}` - Delete dataset
-- `POST /api/api-integration` - API integration endpoint
+### Backend
+- **FastAPI**: High-performance Python API framework
+- **SQLAlchemy**: Database ORM
+- **SQLite**: Lightweight database (configurable)
+- **Pydantic**: Data validation
 
 ### AI & Analytics
-- `POST /api/ask` - Natural language queries
-- `GET /api/query-history` - Query execution history
-- `GET /api/analytics-summary` - Dashboard summary data
-- `POST /api/generate-insights/{dataset_id}` - Generate AI insights
-- `GET /api/insights/{dataset_id}` - Get saved insights for specific dataset
-- `GET /api/insights` - Get all insights
-- `DELETE /api/insights/{insight_id}` - Delete specific insight
-- `GET /api/data-health/{dataset_id}` - Data quality analysis
+- **Google Gemini AI**: Advanced language model
+- **LangChain**: AI framework for LLM applications
+- **Pandas**: Data manipulation and analysis
+- **NumPy**: Numerical computing
 
-### Export & Utilities
-- `POST /api/export` - Export query results
-- `GET /api/export-templates` - Get available export templates
-- `POST /api/export-template/{template_name}` - Export using template
+## 📦 Installation & Setup
 
-### Metadata Management
-- `POST /api/metadata` - Create/update metadata
-- `GET /api/metadata/{table_name}` - Get metadata for specific table
-- `GET /api/metadata` - Get all metadata
-- `POST /api/metadata/auto-discover/{table_name}` - Auto-discover table metadata
+### Prerequisites
+- Node.js 18+ and npm/yarn
+- Python 3.8+
+- Git
 
-## 🛠️ Development
+### 1. Clone the Repository
+```bash
+git clone <repository-url>
+cd Reportzy
+```
 
-### Database Schema
-The application uses SQLite with the following key tables:
+### 2. Backend Setup
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-- **uploaded_datasets** - Tracks uploaded files and their metadata
-- **query_logs** - Stores query history and results  
-- **table_metadata** - Column descriptions and data types
-- **ai_insights** - Generated insights and recommendations
-- **[user_tables]** - Dynamic tables created from uploaded files
+# Install dependencies
+pip install -r requirements.txt
+
+# Set environment variables
+export GOOGLE_API_KEY="your-gemini-api-key"
+
+# Run backend server
+cd backend
+uvicorn main:app --reload --port 8001
+```
+
+### 3. Frontend Setup
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+```
+
+### 4. Access the Application
+- Frontend: http://localhost:3000 (or 3001 if 3000 is busy)
+- Backend API: http://localhost:8001
+- API Documentation: http://localhost:8001/docs
+
+## 🎯 Usage Guide
+
+### Getting Started
+1. **Upload Data**: Navigate to "Import Data" and upload your CSV/Excel files
+2. **Explore Dashboard**: View key metrics and dataset overview
+3. **Ask Questions**: Use natural language to query your data (e.g., "Show me sales trends by month")
+4. **Connect APIs**: Integrate external data sources via the API Connect tab
+5. **Generate Insights**: Let AI automatically discover patterns and anomalies
+
+### Example Queries
+- "What are the top 10 customers by revenue?"
+- "Show me sales trends over the last 6 months"
+- "Find any unusual patterns in the data"
+- "Which products have the highest profit margins?"
+
+### API Integration
+Connect external APIs to automatically import data:
+```javascript
+// Example API configuration
+{
+  "name": "Sales API",
+  "endpoint": "https://api.example.com/sales",
+  "headers": {
+    "Authorization": "Bearer your-token"
+  },
+  "schedule": "daily"
+}
+```
+
+## 🔧 Development
+
+### Component Development
+All UI components are modular and reusable:
+
+```typescript
+// Example component structure
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+
+export function MyComponent() {
+  return (
+    <Card>
+      <Button>Click me</Button>
+    </Card>
+  );
+}
+```
 
 ### Adding New Features
-1. Create new router in `app/` directory
-2. Add to `main.py` imports and include_router()
-3. Update API documentation in README
-4. Test with curl commands
+1. **Frontend**: Create components in `frontend/src/components/`
+2. **Backend**: Add endpoints in `backend/` directory
+3. **AI**: Extend AI functionality in `ai/` directory
+4. **Types**: Update interfaces in `frontend/src/types/`
 
-## 🧪 Testing
-
-### Automated Endpoint Testing
+### Building for Production
 ```bash
-# Run the automated test script
-python test_endpoints.py
+# Frontend
+cd frontend
+npm run build
+npm start
 
-# Or make it executable and run directly
-chmod +x test_endpoints.py
-./test_endpoints.py
+# Backend
+cd backend
+python -m uvicorn main:app --host 0.0.0.0 --port 8001
 ```
 
-### Manual Testing
-```bash
-# Test file upload
-curl -X POST "http://localhost:8001/api/upload" \
-  -F "file=@test_data.csv" -F "dataset_name=test"
+## 📊 Data Formats
 
-# Test analytics summary  
-curl "http://localhost:8001/api/analytics-summary"
+### Supported Import Formats
+- CSV files (.csv)
+- Excel files (.xlsx, .xls)
+- JSON (via API)
 
-# Test AI insights
-curl -X POST "http://localhost:8001/api/generate-insights/1"
-```
+### Data Requirements
+- Column headers in first row
+- Consistent data types per column
+- Maximum file size: 50MB
+- Recommended: < 1M rows for optimal performance
 
-### Health Check
-```bash
-curl "http://localhost:8001/health"
-# Should return: {"status": "healthy", "database": "connected"}
-```
+## 🔐 Security
 
-> **Note**: All endpoints have been tested and verified to be working correctly. You can run the automated test script to verify functionality after making changes.
-
-## 🔧 Configuration
-
-### Environment Variables
-- `GOOGLE_API_KEY` - Required for AI features
-- `DATABASE_URL` - SQLite database path (default: sqlite:///./reportzy.db)
-- `PORT` - Server port (default: 8001)
-
-### Supported File Formats
-- **CSV** - Comma-separated values
-- **Excel** - .xlsx files (using openpyxl)
-
-### Data Types
-All uploaded data is stored as TEXT in SQLite for maximum compatibility. The AI system handles type inference automatically.
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Port Already In Use**
-```bash
-# Use a different port
-PORT=8002 ./start.sh
-```
-
-**Google API Key Missing**
-```bash
-# Set your API key in .env file
-echo "GOOGLE_API_KEY=your_key_here" >> .env
-```
-
-**Dependencies Issues**
-```bash
-# Reinstall dependencies
-pip install -r requirements.txt --force-reinstall
-```
-
-**Database Issues**
-```bash
-# Remove and recreate database
-rm reportzy.db
-# Restart the server to recreate tables
-./start.sh
-```
-
-### Logs and Debugging
-- Server logs are displayed in the terminal when running with `./start.sh`
-- Use `/health` endpoint to check server and database status
-- Run `python test_endpoints.py` to verify all endpoints
+- **Input Validation**: All data inputs are validated
+- **SQL Injection Protection**: Parameterized queries
+- **CORS Configuration**: Secure cross-origin requests
+- **Environment Variables**: Sensitive data in env files
+- **File Upload Security**: Type and size validation
 
 ## 🚀 Deployment
 
-### Production Setup
-1. Set environment variables in production
-2. Use a process manager like PM2 or systemd
-3. Configure reverse proxy (nginx) for HTTPS
-4. Set up database backups
-5. Monitor with health check endpoint
-
-### Docker (Optional)
+### Docker Deployment
 ```dockerfile
-FROM python:3.9-slim
+# Frontend Dockerfile example
+FROM node:18-alpine
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+COPY package*.json ./
+RUN npm install
 COPY . .
-EXPOSE 8001
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
 ```
+
+### Environment Variables
+```env
+# Backend
+GOOGLE_API_KEY=your-gemini-api-key
+DATABASE_URL=sqlite:///./reportzy.db
+
+# Frontend
+NEXT_PUBLIC_API_URL=http://localhost:8001
+```
+
+## 🧪 Testing
+
+```bash
+# Frontend tests
+cd frontend
+npm run test
+
+# Backend tests
+cd backend
+pytest
+
+# Type checking
+npm run type-check
+```
+
+## 📝 API Documentation
+
+### Key Endpoints
+- `GET /api/datasets` - List all datasets
+- `POST /api/upload` - Upload new dataset
+- `POST /api/ask` - Natural language query
+- `GET /api/insights/all` - Get generated insights
+- `POST /api/insights/generate` - Generate new insights
+
+Full API documentation available at `/docs` when running the backend.
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes
-4. Test thoroughly with sample data
-5. Update README if needed
-6. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Standards
+- **TypeScript**: All frontend code must be typed
+- **ESLint/Prettier**: Code formatting enforced
+- **Component Testing**: Test all new components
+- **Documentation**: Update README for new features
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🎯 Future Enhancements
+## 🆘 Support
 
-- [ ] PostgreSQL support for larger datasets
-- [ ] Advanced chart types and visualizations  
-- [ ] Real-time data streaming capabilities
-- [ ] User authentication and multi-tenancy
-- [ ] Scheduled data imports via API
-- [ ] Advanced ML-powered insights
-- [ ] Data transformation pipelines
+### Common Issues
+1. **Port conflicts**: Use different ports if 3000/8001 are busy
+2. **API key errors**: Ensure GOOGLE_API_KEY is set correctly
+3. **File upload issues**: Check file size and format
+4. **Database errors**: Verify SQLite permissions
+
+### Getting Help
+- Check the GitHub Issues page
+- Review the API documentation at `/docs`
+- Ensure all dependencies are installed correctly
+
+## 🎉 Acknowledgments
+
+- [Next.js](https://nextjs.org/) - React framework
+- [FastAPI](https://fastapi.tiangolo.com/) - Python web framework  
+- [shadcn/ui](https://ui.shadcn.com/) - UI component library
+- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
+- [Google Gemini](https://deepmind.google/technologies/gemini/) - AI model
+- [LangChain](https://langchain.com/) - AI framework
 
 ---
 
-**Built with ❤️ using FastAPI, SQLAlchemy, Google Gemini, and modern web technologies.**
+**Made with ❤️ for data-driven insights**

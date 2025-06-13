@@ -10,8 +10,8 @@ from sqlalchemy import text, inspect
 from sqlalchemy.orm import Session
 import json
 
-from app.db import engine, get_db
-from app.models import UploadedDatasets, TableMetadata
+from db import engine, get_db
+from models import UploadedDatasets, TableMetadata, AIInsights, QueryLog, DeletionLog
 
 upload_router = APIRouter()
 
@@ -295,24 +295,118 @@ async def delete_dataset(dataset_id: int, db: Session = Depends(get_db)):
         if not dataset:
             raise HTTPException(status_code=404, detail="Dataset not found")
         
-        # Drop the table
-        with engine.connect() as conn:
-            drop_sql = f'DROP TABLE IF EXISTS "{dataset.table_name}" CASCADE'
-            conn.execute(text(drop_sql))
-            conn.commit()
+        dataset_name = dataset.dataset_name
+        table_name = dataset.table_name
         
-        # Delete metadata
-        db.query(TableMetadata).filter(TableMetadata.table_name == dataset.table_name).delete()
+        # Drop the table safely
+        try:
+            with engine.connect() as conn:
+                drop_sql = f'DROP TABLE IF EXISTS "{table_name}"'
+                conn.execute(text(drop_sql))
+                conn.commit()
+        except Exception as e:
+            print(f"Warning: Could not drop table {table_name}: {e}")
         
-        # Delete dataset record
-        db.delete(dataset)
-        db.commit()
+        # Delete all related data in transaction
+        try:
+            # 1. Delete AI insights
+            insights_deleted = db.query(AIInsights).filter(AIInsights.table_name == table_name).delete()
+            
+            # 2. Delete query logs  
+            queries_deleted = db.query(QueryLog).filter(QueryLog.table_name == table_name).delete()
+            
+            # 3. Delete metadata
+            metadata_deleted = db.query(TableMetadata).filter(TableMetadata.table_name == table_name).delete()
+            
+            # 4. Log the deletion
+            deletion_log = DeletionLog(
+                dataset_name=dataset_name,
+                table_name=table_name,
+                file_name=dataset.file_name,
+                row_count=dataset.row_count,
+                column_count=dataset.column_count,
+                deleted_items={
+                    "insights_deleted": insights_deleted,
+                    "queries_deleted": queries_deleted,
+                    "metadata_deleted": metadata_deleted
+                }
+            )
+            db.add(deletion_log)
+            
+            # 5. Delete dataset record
+            db.delete(dataset)
+            db.commit()
+            
+            return {
+                "success": True, 
+                "message": f"Dataset '{dataset_name}' deleted successfully",
+                "deleted_items": {
+                    "table": table_name,
+                    "insights": insights_deleted,
+                    "queries": queries_deleted,
+                    "metadata": metadata_deleted
+                }
+            }
+            
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Error deleting related data: {str(e)}")
         
-        return {"success": True, "message": f"Dataset '{dataset.dataset_name}' deleted successfully"}
-        
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error deleting dataset: {str(e)}")
+
+@upload_router.get("/deletion-logs")
+async def get_deletion_logs(limit: int = 50, db: Session = Depends(get_db)):
+    """Get deletion logs"""
+    try:
+        logs = db.query(DeletionLog).order_by(DeletionLog.deleted_at.desc()).limit(limit).all()
+        
+        return {
+            "success": True,
+            "deletion_logs": [
+                {
+                    "id": log.id,
+                    "dataset_name": log.dataset_name,
+                    "table_name": log.table_name,
+                    "file_name": log.file_name,
+                    "row_count": log.row_count,
+                    "column_count": log.column_count,
+                    "deleted_at": log.deleted_at.isoformat(),
+                    "deleted_items": log.deleted_items
+                }
+                for log in logs
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching deletion logs: {str(e)}")
+
+@upload_router.get("/deleted-datasets")
+async def get_deleted_datasets(limit: int = 50, db: Session = Depends(get_db)):
+    """Get deleted datasets (alias for deletion-logs)"""
+    try:
+        logs = db.query(DeletionLog).order_by(DeletionLog.deleted_at.desc()).limit(limit).all()
+        
+        return {
+            "success": True,
+            "deleted_datasets": [
+                {
+                    "id": log.id,
+                    "dataset_name": log.dataset_name,
+                    "table_name": log.table_name,
+                    "file_name": log.file_name,
+                    "row_count": log.row_count,
+                    "column_count": log.column_count,
+                    "deleted_at": log.deleted_at.isoformat() if log.deleted_at is not None else None,
+                    "deleted_items": log.deleted_items
+                }
+                for log in logs
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching deleted datasets: {str(e)}")
 
 @upload_router.post("/api-integration")
 async def create_api_integration(

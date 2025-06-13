@@ -1,0 +1,29 @@
+"use client";
+
+import { Sidebar } from "@/components/Sidebar";
+import { Header } from "@/components/Header";
+import { AIInsights } from "@/components/AIInsights";
+import { useState } from "react";
+
+export default function AIInsightsPage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar 
+        activeTab="ai-insights"
+        onTabChange={() => {}} // Navigation handled by Next.js router
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
+      
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+        
+        <main className="flex-1 overflow-auto p-6">
+          <AIInsights />
+        </main>
+      </div>
+    </div>
+  );
+}

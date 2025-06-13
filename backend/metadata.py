@@ -7,8 +7,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 import json
 
-from app.db import engine, get_db
-from app.models import TableMetadata
+from db import engine, get_db
+from models import TableMetadata
 
 metadata_router = APIRouter()
 

@@ -1,16 +1,19 @@
-# app/main.py
+# backend/main.py
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
-from app.ask import ask_router
-from app.export import export_router
-from app.metadata import metadata_router
-from app.file_upload import upload_router
-from app.ai_insights import insights_router
-from app.db import engine, init_database
+from export import export_router
+from metadata import metadata_router
+from file_upload import upload_router
+from db import engine, init_database
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from ai.ask import ask_router
+from ai.ai_insights import insights_router
 
 # Initialize database tables on startup
 init_database()
@@ -45,28 +48,18 @@ async def health_check():
     except Exception as e:
         return {"status": "unhealthy", "error": str(e)}
 
-# Serve dashboard
+# Serve frontend for all routes
 @app.get("/dashboard")
-async def dashboard():
-    """Serve the analytics dashboard"""
-    dashboard_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "dashboard.html")
-    return FileResponse(dashboard_path, media_type="text/html")
+@app.get("/import-data") 
+@app.get("/api-connect")
+@app.get("/ai-insights")
+async def serve_frontend():
+    """Serve the main frontend application"""
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "index.html")
+    return FileResponse(frontend_path, media_type="text/html")
 
 @app.get("/")
 async def root():
-    """Root endpoint with API information"""
-    return {
-        "message": "Reportzy Analytics API",
-        "version": "1.0.0",
-        "endpoints": {
-            "dashboard": "/dashboard",
-            "health": "/health",
-            "ask": "/api/ask",
-            "upload": "/api/upload",
-            "datasets": "/api/datasets",
-            "export": "/api/export",
-            "metadata": "/api/metadata",
-            "insights": "/api/generate-insights",
-            "analytics": "/api/analytics-summary"
-        }
-    }
+    """Root endpoint - redirect to dashboard"""
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "index.html")
+    return FileResponse(frontend_path, media_type="text/html")

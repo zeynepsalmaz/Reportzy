@@ -10,12 +10,47 @@ __pycache__/
 .venv/
 venv/
 
-# Env files
+# Environment files
 .env
 .env.*
 
-# VSCode
-.vscode/
+# Node.js / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# Mac OS
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Testing
+coverage/
+
+# Logs
+*.log
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Backup files
+*.bak
+*.backup

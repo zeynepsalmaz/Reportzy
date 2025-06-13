@@ -9,8 +9,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 import json
 
-from app.db import engine, get_db
-from app.models import AIInsights, UploadedDatasets
+from backend.db import engine, get_db
+from backend.models import AIInsights, UploadedDatasets
 
 insights_router = APIRouter()
 

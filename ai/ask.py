@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 
-from app.db import engine, get_db
-from app.models import QueryLog
+from backend.db import engine, get_db
+from backend.models import QueryLog
 
 ask_router = APIRouter()
 

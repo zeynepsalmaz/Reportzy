@@ -1,0 +1,177 @@
+// SASS Variables
+$sidebar-width: 280px;
+$header-height: 64px;
+$transition-base: 0.2s ease-in-out;
+
+// Colors
+$primary-blue: #2563eb;
+$primary-blue-light: #3b82f6;
+$gray-50: #f9fafb;
+$gray-100: #f3f4f6;
+$gray-200: #e5e7eb;
+$gray-700: #374151;
+$gray-900: #111827;
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin card-shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  &:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+}
+
+@mixin button-primary {
+  background-color: $primary-blue;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: all $transition-base;
+  
+  &:hover {
+    background-color: $primary-blue-light;
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Custom component styles
+.sidebar {
+  width: $sidebar-width;
+  transition: transform $transition-base;
+  
+  &__header {
+    height: $header-height;
+    @include flex-center;
+    border-bottom: 1px solid $gray-200;
+  }
+  
+  &__nav-item {
+    transition: all $transition-base;
+    
+    &:hover {
+      background-color: $gray-100;
+    }
+    
+    &--active {
+      background-color: rgba($primary-blue, 0.1);
+      color: $primary-blue;
+      border-left: 3px solid $primary-blue;
+    }
+  }
+}
+
+.dashboard {
+  &__card {
+    @include card-shadow;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    background: white;
+    transition: all $transition-base;
+  }
+  
+  &__metric {
+    font-size: 2rem;
+    font-weight: 700;
+    color: $gray-900;
+    line-height: 1;
+  }
+  
+  &__label {
+    font-size: 0.875rem;
+    color: $gray-700;
+    font-weight: 500;
+  }
+}
+
+.upload {
+  &__dropzone {
+    border: 2px dashed $gray-200;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all $transition-base;
+    cursor: pointer;
+    
+    &:hover {
+      border-color: $primary-blue;
+      background-color: rgba($primary-blue, 0.02);
+    }
+    
+    &--dragover {
+      border-color: $primary-blue;
+      background-color: rgba($primary-blue, 0.05);
+    }
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// Utility classes
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+// Responsive utilities
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    z-index: 50;
+    
+    &--closed {
+      transform: translateX(-100%);
+    }
+  }
+  
+  .dashboard {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
