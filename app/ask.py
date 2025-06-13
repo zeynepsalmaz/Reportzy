@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 
 from app.db import engine, get_db
@@ -28,12 +28,12 @@ class AskResponse(BaseModel):
     suggestion: str = ""
 
 def get_llm():
-    """Initialize OpenAI LLM"""
-    api_key = os.getenv("OPENAI_API_KEY")
+    """Initialize Google Gemini LLM"""
+    api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        raise ValueError("OPENAI_API_KEY not found in environment")
-    os.environ["OPENAI_API_KEY"] = api_key
-    return ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+        raise ValueError("GOOGLE_API_KEY not found in environment")
+    os.environ["GOOGLE_API_KEY"] = api_key
+    return ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
 
 def generate_sql_query(question: str) -> str:
     """Generate SQL query using enhanced pattern matching with LLM fallback"""
@@ -44,84 +44,73 @@ def generate_sql_query(question: str) -> str:
     if question_lower.startswith('select'):
         return question.strip()
     
+    # Get available tables dynamically
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_type = 'BASE TABLE'
+                AND table_name NOT IN ('query_logs', 'table_metadata')
+            """))
+            available_tables = [row[0] for row in result.fetchall()]
+    except:
+        available_tables = []
+    
+    if not available_tables:
+        return "SELECT 'No data tables found. Please upload a CSV or Excel file first.' as message"
+    
+    # Use the first available table as default (most recently uploaded)
+    default_table = available_tables[0] if available_tables else 'data'
+    
     # Enhanced pattern matching for analytics queries
     patterns = {
-        # Sales Analytics
-        'total_sales': ['total sales', 'sum of sales', 'sales total', 'revenue total', 'overall sales'],
-        'sales_by_customer': ['sales by customer', 'customer sales', 'per customer', 'each customer', 'customer breakdown'],
-        'sales_by_product': ['sales by product', 'product sales', 'per product', 'each product', 'product breakdown'],
-        'sales_by_date': ['sales by date', 'daily sales', 'sales over time', 'sales trend', 'sales per day'],
-        'top_customers': ['top customers', 'best customers', 'highest spending', 'biggest spenders', 'top 5 customers', 'top 10 customers'],
-        'top_products': ['top products', 'best selling', 'most popular', 'bestsellers', 'top 5 products', 'top 10 products', 'bestselling products', 'show me bestselling'],
-        'recent_sales': ['recent sales', 'latest sales', 'new orders', 'last orders', 'newest sales', 'recent purchases'],
-        'average_order': ['average order', 'avg order', 'mean sale', 'average sale', 'average order value'],
-        'sales_count': ['number of sales', 'count of orders', 'total orders', 'order count'],
-        
-        # Customer Analytics  
-        'customer_list': ['all customers', 'list customers', 'customer names', 'show customers'],
-        'customer_count': ['number of customers', 'count customers', 'total customers', 'customer count', 'count of customers'],
-        
-        # Product Analytics
-        'product_list': ['all products', 'list products', 'product names', 'show products'],
-        'product_count': ['number of products', 'count products', 'total products', 'product count'],
-        
-        # Time-based
-        'today_sales': ['today sales', 'todays sales', 'sales today'],
-        'month_sales': ['this month', 'monthly sales', 'month sales'],
-        'year_sales': ['this year', 'yearly sales', 'year sales'],
+        # General Analytics
+        'total_sum': ['total', 'sum of', 'sum', 'overall'],
+        'count_records': ['how many', 'count', 'number of records', 'total records'],
+        'show_all': ['show all', 'display all', 'list all', 'show me all'],
+        'top_values': ['top', 'highest', 'largest', 'biggest', 'maximum'],
+        'bottom_values': ['bottom', 'lowest', 'smallest', 'minimum'],
+        'average': ['average', 'avg', 'mean'],
+        'unique_values': ['unique', 'distinct', 'different'],
+        'group_by': ['by', 'per', 'each', 'breakdown'],
     }
     
-    # Check patterns and generate appropriate SQL
-    for pattern_key, pattern_phrases in patterns.items():
-        if any(phrase in question_lower for phrase in pattern_phrases):
-            if pattern_key == 'total_sales':
-                return "SELECT SUM(CAST(amount AS DECIMAL)) as total_sales FROM sales"
-            elif pattern_key == 'sales_by_customer':
-                return "SELECT customer_name, SUM(CAST(amount AS DECIMAL)) as total_spent, COUNT(*) as order_count FROM sales GROUP BY customer_name ORDER BY total_spent DESC"
-            elif pattern_key == 'sales_by_product':
-                return "SELECT product, SUM(CAST(amount AS DECIMAL)) as total_sales, COUNT(*) as units_sold FROM sales GROUP BY product ORDER BY total_sales DESC"
-            elif pattern_key == 'sales_by_date':
-                return "SELECT date, SUM(CAST(amount AS DECIMAL)) as daily_sales, COUNT(*) as order_count FROM sales GROUP BY date ORDER BY date"
-            elif pattern_key == 'top_customers':
-                return "SELECT customer_name, SUM(CAST(amount AS DECIMAL)) as total_spent FROM sales GROUP BY customer_name ORDER BY total_spent DESC LIMIT 5"
-            elif pattern_key == 'top_products':
-                return "SELECT product, SUM(CAST(amount AS DECIMAL)) as total_sales, COUNT(*) as units_sold FROM sales GROUP BY product ORDER BY total_sales DESC LIMIT 5"
-            elif pattern_key == 'recent_sales':
-                return "SELECT * FROM sales ORDER BY date DESC LIMIT 10"
-            elif pattern_key == 'average_order':
-                return "SELECT AVG(CAST(amount AS DECIMAL)) as average_order_value FROM sales"
-            elif pattern_key == 'sales_count':
-                return "SELECT COUNT(*) as total_orders FROM sales"
-            elif pattern_key == 'customer_list':
-                return "SELECT DISTINCT customer_name FROM sales ORDER BY customer_name"
-            elif pattern_key == 'customer_count':
-                return "SELECT COUNT(DISTINCT customer_name) as total_customers FROM sales"
-            elif pattern_key == 'product_list':
-                return "SELECT DISTINCT product FROM sales ORDER BY product"
-            elif pattern_key == 'product_count':
-                return "SELECT COUNT(DISTINCT product) as total_products FROM sales"
-    
-    # General fallback patterns
-    if any(word in question_lower for word in ['show', 'get', 'list', 'display']):
-        if 'sales' in question_lower:
-            return "SELECT * FROM sales ORDER BY date DESC LIMIT 20"
-    
-    # Try LLM if pattern matching fails
+    # Try LLM for complex queries with dynamic table info
     try:
         llm = get_llm()
+        
+        # Get table schemas
+        table_schemas = ""
+        try:
+            with engine.connect() as conn:
+                for table in available_tables:
+                    schema_result = conn.execute(text("""
+                        SELECT column_name, data_type 
+                        FROM information_schema.columns 
+                        WHERE table_name = :table_name AND table_schema = 'public'
+                        ORDER BY ordinal_position
+                    """), {"table_name": table})
+                    
+                    columns = [f"{row[0]} ({row[1]})" for row in schema_result.fetchall()]
+                    table_schemas += f"- {table}: {', '.join(columns)}\n"
+        except:
+            table_schemas = f"- {default_table}: (columns unknown)\n"
         
         prompt = f"""
         Convert the following natural language question to a SQL query for a PostgreSQL database.
         
-        Available tables and schema:
-        - sales (order_id VARCHAR, customer_name VARCHAR, product VARCHAR, amount VARCHAR, date VARCHAR)
+        Available tables and schemas:
+        {table_schemas}
         
         Guidelines:
-        - Use CAST(amount AS DECIMAL) for numeric calculations
+        - Use appropriate table names from the list above
+        - For numeric calculations, use CAST(column AS DECIMAL) or column::numeric
         - Use proper PostgreSQL syntax
         - Return only the SQL query, no explanation
         - If asking for "all" or general data, limit to 20 rows
         - For aggregations, include meaningful column aliases
+        - If table/column names are unclear, use the most likely match
         
         Question: {question}
         
@@ -148,11 +137,11 @@ def generate_sql_query(question: str) -> str:
         print(f"Error generating SQL with LLM: {e}")
         print("Falling back to default query...")
         
-        # Ultimate fallback
-        if any(word in question_lower for word in ['sales', 'order', 'purchase']):
-            return "SELECT * FROM sales ORDER BY date DESC LIMIT 10"
+        # Ultimate fallback - show data from first available table
+        if available_tables:
+            return f"SELECT * FROM {default_table} LIMIT 10"
         
-        return "SELECT 'No data found' as message"
+        return "SELECT 'No data available. Please upload a CSV or Excel file first.' as message"
 
 def execute_sql_query(sql_query: str) -> List[Dict[str, Any]]:
     """Execute SQL query and return results"""
@@ -367,13 +356,14 @@ async def get_analytics_summary(db: Session = Depends(get_db)):
     try:
         # Get basic stats about the data
         with engine.connect() as conn:
-            # Check what tables exist (PostgreSQL syntax)
+            # Get user-uploaded tables (exclude system tables)
             try:
+                # For SQLite, use sqlite_master
                 tables_result = conn.execute(text("""
-                    SELECT table_name 
-                    FROM information_schema.tables 
-                    WHERE table_schema = 'public' 
-                    AND table_type = 'BASE TABLE'
+                    SELECT name as table_name 
+                    FROM sqlite_master 
+                    WHERE type='table' 
+                    AND name NOT IN ('query_logs', 'table_metadata', 'uploaded_datasets', 'ai_insights', 'sqlite_sequence')
                 """))
                 tables = [row[0] for row in tables_result.fetchall()]
             except Exception:
@@ -383,50 +373,31 @@ async def get_analytics_summary(db: Session = Depends(get_db)):
             summary = {
                 "available_tables": tables,
                 "suggested_queries": [
-                    "Show me total sales",
-                    "Top customers by spending", 
-                    "Sales by product",
-                    "Recent orders",
-                    "Average order value",
-                    "Daily sales trends"
+                    "Show me the structure of my data",
+                    "What are the top 10 records?", 
+                    "Show me summary statistics",
+                    "What are the unique values in each column?",
+                    "Show me data trends over time",
+                    "Find any missing or null values"
                 ]
             }
             
-            # If sales table exists, get some basic stats
-            if 'sales' in tables:
+            # Get basic stats for any available tables
+            data_stats = {"total_tables": len(tables)}
+            
+            if tables:
+                # Get row count for the first table as an example
                 try:
-                    stats_result = conn.execute(text("""
-                        SELECT 
-                            COUNT(*) as total_orders,
-                            COUNT(DISTINCT customer_name) as total_customers,
-                            COUNT(DISTINCT product) as total_products,
-                            SUM(CAST(amount AS DECIMAL)) as total_revenue
-                        FROM sales
-                    """))
-                    stats = stats_result.fetchone()
-                    
-                    if stats:
-                        summary["data_stats"] = {
-                            "total_orders": int(stats[0]) if stats[0] is not None else 0,
-                            "total_customers": int(stats[1]) if stats[1] is not None else 0, 
-                            "total_products": int(stats[2]) if stats[2] is not None else 0,
-                            "total_revenue": float(stats[3]) if stats[3] is not None else 0.0
-                        }
-                    else:
-                        summary["data_stats"] = {
-                            "total_orders": 0,
-                            "total_customers": 0,
-                            "total_products": 0,
-                            "total_revenue": 0.0
-                        }
-                except Exception as e:
-                    # If there's an error with sales table, just skip the stats
-                    summary["data_stats"] = {
-                        "total_orders": 0,
-                        "total_customers": 0,
-                        "total_products": 0,
-                        "total_revenue": 0
-                    }
+                    first_table = tables[0]
+                    stats_result = conn.execute(text(f"SELECT COUNT(*) as row_count FROM {first_table}"))
+                    row = stats_result.fetchone()
+                    if row:
+                        data_stats["sample_table"] = first_table
+                        data_stats["sample_table_rows"] = row[0]
+                except Exception:
+                    pass
+            
+            summary["data_stats"] = data_stats
             
             return {"success": True, "summary": summary}
             
