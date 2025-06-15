@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-});
+import "@/styles/globals.css";
+import { MantineProvider, ColorSchemeScript } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 
 export const metadata: Metadata = {
   title: "Reportzy - AI Analytics Platform",
-  description: "Analytics & Reporting with AI-powered SQL generation",
+  description: "Professional analytics and reporting platform with AI-powered insights",
 };
 
 export default function RootLayout({
@@ -18,10 +15,48 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
-        <div className="min-h-screen bg-gray-50">
+      <head>
+        <ColorSchemeScript />
+      </head>
+      <body>
+        <MantineProvider
+          theme={{
+            primaryColor: 'blue',
+            defaultRadius: 'md',
+            fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+            colors: {
+              brand: [
+                '#f0f4ff',
+                '#dce7ff',
+                '#b8d4ff',
+                '#91c1ff',
+                '#6faeff',
+                '#5a9bff',
+                '#4d87ff',
+                '#3b74e6',
+                '#2d60cc',
+                '#1e4db3'
+              ]
+            },
+            components: {
+              Card: {
+                defaultProps: {
+                  shadow: 'sm',
+                  radius: 'md',
+                  withBorder: true,
+                },
+              },
+              Button: {
+                defaultProps: {
+                  radius: 'md',
+                },
+              },
+            },
+          }}
+        >
+          <Notifications position="top-right" />
           {children}
-        </div>
+        </MantineProvider>
       </body>
     </html>
   );

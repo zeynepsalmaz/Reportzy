@@ -1,26 +1,24 @@
 "use client";
 
-import { Sidebar } from "@/components/Sidebar";
-import { Header } from "@/components/Header";
-import { ImportData } from "@/components/ImportData";
 import { useState } from "react";
+import { Header } from "@/components/modern/Header";
+import { Sidebar } from "@/components/modern/Sidebar";
+import { ImportData } from "@/components/modern/ImportData";
 
 export default function ImportDataPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="page-layout">
       <Sidebar 
-        activeTab="import-data"
-        onTabChange={() => {}} // Navigation handled by Next.js router
         isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
+        onClose={() => setSidebarOpen(false)}
       />
       
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+      <div className="page-content">
+        <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} sidebarOpen={sidebarOpen} />
         
-        <main className="flex-1 overflow-auto p-6">
+        <main className="page-main">
           <ImportData />
         </main>
       </div>
