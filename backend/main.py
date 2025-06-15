@@ -5,10 +5,11 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
-from export import export_router
-from metadata import metadata_router
-from file_upload import upload_router
-from db import engine, init_database
+from .export import export_router
+from .metadata import metadata_router
+from .file_upload import upload_router
+from .dashboard import dashboard_router
+from .db import engine, init_database
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -30,6 +31,7 @@ app.add_middleware(
 )
 
 # Register endpoints
+app.include_router(dashboard_router, prefix="/api", tags=["Dashboard"])
 app.include_router(ask_router, prefix="/api", tags=["AI Analytics"])
 app.include_router(export_router, prefix="/api", tags=["Data Export"])
 app.include_router(metadata_router, prefix="/api", tags=["Metadata Management"])
@@ -48,18 +50,13 @@ async def health_check():
     except Exception as e:
         return {"status": "unhealthy", "error": str(e)}
 
-# Serve frontend for all routes
-@app.get("/dashboard")
-@app.get("/import-data") 
-@app.get("/api-connect")
-@app.get("/ai-insights")
-async def serve_frontend():
-    """Serve the main frontend application"""
-    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "index.html")
-    return FileResponse(frontend_path, media_type="text/html")
-
+# API root endpoint
 @app.get("/")
 async def root():
-    """Root endpoint - redirect to dashboard"""
-    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "index.html")
-    return FileResponse(frontend_path, media_type="text/html")
+    """API root endpoint"""
+    return {
+        "message": "Reportzy Analytics API", 
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }

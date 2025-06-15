@@ -1,0 +1,75 @@
+/* ImportData styles */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.uploadArea {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.uploadArea:hover {
+  border-color: #6366f1;
+}
+
+.uploadArea.active {
+  border-color: #4f46e5;
+  background-color: #f8fafc;
+}
+
+.fileList {
+  display: grid;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.fileName {
+  font-weight: 500;
+  color: #374151;
+}
+
+.fileSize {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.fileActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.progressBar {
+  width: 100%;
+  height: 0.5rem;
+  background-color: #e5e7eb;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #10b981;
+  transition: width 0.3s ease;
+}
