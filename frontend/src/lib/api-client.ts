@@ -41,6 +41,10 @@ class ApiClient {
     return this.request(API_CONFIG.ENDPOINTS.ANALYTICS_SUMMARY);
   }
 
+  async getDashboardStats() {
+    return this.request('/api/dashboard-stats');
+  }
+
   // Dataset API
   async getDatasets() {
     return this.request(API_CONFIG.ENDPOINTS.DATASETS);

@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001',
   ENDPOINTS: {
     // Dashboard
     ANALYTICS_SUMMARY: '/api/analytics-summary',

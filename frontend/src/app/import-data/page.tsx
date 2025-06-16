@@ -6,14 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
 import { useAppStore } from '@/store/app-store';
 import { apiClient } from '@/lib/api-client';
 import { APP_CONFIG } from '@/constants/config';
 import { useState, useRef } from 'react';
 import { 
   Upload, 
-  FileText, 
   Check, 
   X, 
   AlertCircle,
@@ -25,7 +23,7 @@ import {
 import type { Dataset } from '@/types';
 
 export default function ImportDataPage() {
-  const { datasets, setDatasets, addDataset, addNotification } = useAppStore();
+  const { datasets, addDataset, addNotification } = useAppStore();
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -71,7 +69,14 @@ export default function ImportDataPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await apiClient.uploadDataset(formData) as any;
+      const response = await apiClient.uploadDataset(formData) as {
+        success: boolean;
+        dataset_id?: string;
+        table_name?: string;
+        rows_processed?: number;
+        columns_processed?: number;
+        message?: string;
+      };
       
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -84,10 +89,10 @@ export default function ImportDataPage() {
           upload_date: new Date().toISOString(),
           size: file.size,
           fileSize: file.size, // Added for compatibility
-          rows: response.rows || 0,
-          rowCount: response.rows || 0, // Added for compatibility
-          columns: response.columns || 0,
-          columnCount: response.columns || 0, // Added for compatibility
+          rows: response.rows_processed || 0,
+          rowCount: response.rows_processed || 0, // Added for compatibility
+          columns: response.columns_processed || 0,
+          columnCount: response.columns_processed || 0, // Added for compatibility
           status: 'ready'
         };
 

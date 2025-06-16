@@ -1,13 +1,13 @@
 # Reportzy - AI-Powered Data Analytics Platform
 
-A modern, full-stack analytics platform that transforms raw data into actionable insights using AI. Built with a professional tech stack featuring Next.js, TypeScript, Python FastAPI, and AI integration.
+A modern, full-stack analytics platform that transforms raw data into actionable insights using AI. Built with a professional tech stack featuring Next.js 15, TypeScript, Python FastAPI, and AI integration.
 
 ## 🚀 Features
 
 ### Core Functionality
 - **Smart Data Import**: Upload CSV/Excel files with intelligent parsing and validation
 - **AI-Powered Analytics**: Natural language queries to explore your data
-- **Interactive Visualizations**: Dynamic charts and graphs generated from your questions
+- **Interactive Dashboard**: Dynamic charts and metrics visualization
 - **Dataset Management**: Preview, organize, and manage your datasets with ease
 - **API Integration**: Connect external data sources seamlessly
 - **Insights Generation**: Automated pattern detection and anomaly analysis
@@ -22,24 +22,25 @@ A modern, full-stack analytics platform that transforms raw data into actionable
 
 ## 🏗️ Architecture
 
-### Frontend (Next.js 14 + TypeScript)
+### Frontend (Next.js 15 + TypeScript + Turbopack)
 ```
 frontend/
 ├── src/
 │   ├── app/                 # Next.js App Router
 │   │   ├── layout.tsx       # Root layout
-│   │   └── page.tsx         # Main application
+│   │   ├── page.tsx         # Home page
+│   │   ├── dashboard/       # Dashboard page
+│   │   ├── import-data/     # Data import page
+│   │   └── ai-insights/     # AI analytics page
 │   ├── components/          # React components
 │   │   ├── ui/              # shadcn/ui components
-│   │   ├── Dashboard.tsx    # Main dashboard
-│   │   ├── ImportData.tsx   # Data upload interface
-│   │   ├── APIConnect.tsx   # API integration
-│   │   ├── AIInsights.tsx   # AI analytics interface
-│   │   ├── Sidebar.tsx      # Navigation sidebar
+│   │   ├── AppLayout.tsx    # Main app layout
 │   │   ├── Header.tsx       # Top navigation
-│   │   └── modals/          # Modal components
+│   │   └── Sidebar.tsx      # Navigation sidebar
 │   ├── types/               # TypeScript interfaces
-│   └── styles/              # Global styles (Tailwind + SASS)
+│   ├── store/               # Zustand state management
+│   ├── lib/                 # Utilities and API client
+│   └── styles/              # Global styles (Tailwind CSS)
 ```
 
 ### Backend (Python FastAPI)
@@ -67,14 +68,15 @@ ai/
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Next.js 14**: React framework with App Router
+- **Next.js 15**: React framework with App Router + Turbopack
 - **TypeScript**: Type-safe development
 - **Tailwind CSS**: Utility-first styling
 - **shadcn/ui**: High-quality UI components
-- **SASS**: Advanced styling capabilities
+- **Zustand**: Lightweight state management
+- **TanStack Query**: Server state management
 - **Lucide Icons**: Modern icon system
 
-### Backend
+### Backend  
 - **FastAPI**: High-performance Python API framework
 - **SQLAlchemy**: Database ORM
 - **SQLite**: Lightweight database (configurable)
@@ -86,37 +88,42 @@ ai/
 - **Pandas**: Data manipulation and analysis
 - **NumPy**: Numerical computing
 
-## 📦 Installation & Setup
+## � Quick Start
 
-### Prerequisites
+### Option 1: Automated Setup (Recommended)
+```bash
+# Clone and start both services
+git clone <repository-url>
+cd Reportzy
+./start-dev.sh
+```
+
+### Option 2: Manual Setup
+
+#### Prerequisites
 - Node.js 18+ and npm/yarn
 - Python 3.8+
 - Git
 
-### 1. Clone the Repository
+#### 1. Clone the Repository
 ```bash
 git clone <repository-url>
 cd Reportzy
 ```
 
-### 2. Backend Setup
+#### 2. Backend Setup
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
 # Install dependencies
 pip install -r requirements.txt
 
-# Set environment variables
+# Set environment variables (optional for AI features)
 export GOOGLE_API_KEY="your-gemini-api-key"
 
 # Run backend server
-cd backend
-uvicorn main:app --reload --port 8001
+python run_backend.py
 ```
 
-### 3. Frontend Setup
+#### 3. Frontend Setup
 ```bash
 # Navigate to frontend directory
 cd frontend
@@ -128,10 +135,10 @@ npm install
 npm run dev
 ```
 
-### 4. Access the Application
-- Frontend: http://localhost:3000 (or 3001 if 3000 is busy)
-- Backend API: http://localhost:8001
-- API Documentation: http://localhost:8001/docs
+#### 4. Access the Application
+- Frontend: http://localhost:3000 (or next available port)
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
 
 ## 🎯 Usage Guide
 
