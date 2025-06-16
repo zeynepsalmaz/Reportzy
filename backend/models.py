@@ -64,3 +64,32 @@ class DeletionLog(Base):
     column_count = Column(Integer)
     deleted_at = Column(DateTime, default=func.current_timestamp())
     deleted_items = Column(JSON)  # Details about what was deleted
+
+class APIConnections(Base):
+    __tablename__ = "api_connections"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(255), nullable=False)
+    connection_type = Column(String(50), nullable=False)  # 'rest', 'graphql', 'database'
+    url = Column(String(500), nullable=False)
+    api_key = Column(String(255))
+    headers = Column(JSON)  # Additional headers
+    auth_config = Column(JSON)  # Authentication configuration
+    status = Column(String(50), default='disconnected')  # 'connected', 'disconnected', 'error'
+    last_sync = Column(DateTime)
+    sync_frequency = Column(Integer)  # minutes
+    target_table_name = Column(String(255))  # Table name where data will be stored
+    data_mapping = Column(JSON)  # Field mapping configuration
+    created_at = Column(DateTime, default=func.current_timestamp())
+    updated_at = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp())
+
+class APISyncLog(Base):
+    __tablename__ = "api_sync_logs"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    connection_id = Column(Integer, nullable=False)
+    sync_status = Column(String(50))  # 'success', 'failed', 'partial'
+    records_synced = Column(Integer, default=0)
+    error_message = Column(Text)
+    sync_duration = Column(Float)  # seconds
+    created_at = Column(DateTime, default=func.current_timestamp())

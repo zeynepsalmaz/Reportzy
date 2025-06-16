@@ -55,11 +55,15 @@ async def upload_file(
 ):
     """Upload and process CSV/Excel files"""
     
+    print(f"DEBUG: Upload started - file: {file.filename}, dataset_name: {dataset_name}")
+    
     # Validate file
     if not file.filename:
+        print("DEBUG: No file selected")
         raise HTTPException(status_code=400, detail="No file selected")
     
     if not allowed_file(file.filename):
+        print(f"DEBUG: File type not allowed: {file.filename}")
         raise HTTPException(
             status_code=400, 
             detail=f"File type not allowed. Supported formats: {', '.join(ALLOWED_EXTENSIONS)}"
@@ -67,25 +71,37 @@ async def upload_file(
     
     # Check file size
     file_content = await file.read()
+    print(f"DEBUG: File size: {len(file_content)} bytes")
+    
     if len(file_content) > MAX_FILE_SIZE:
+        print(f"DEBUG: File too large: {len(file_content)} > {MAX_FILE_SIZE}")
         raise HTTPException(status_code=400, detail="File too large (max 50MB)")
     
     try:
         # Read file into pandas DataFrame
         file_obj = io.BytesIO(file_content)
+        print(f"DEBUG: Reading file with pandas...")
         
         if file.filename.lower().endswith('.csv'):
+            print("DEBUG: Reading CSV file")
             df = pd.read_csv(file_obj)
         elif file.filename.lower().endswith(('.xlsx', '.xls')):
+            print("DEBUG: Reading Excel file")
             df = pd.read_excel(file_obj)
         else:
+            print(f"DEBUG: Unsupported format: {file.filename}")
             raise HTTPException(status_code=400, detail="Unsupported file format")
+        
+        print(f"DEBUG: File read successfully. Shape: {df.shape}")
+        print(f"DEBUG: Columns: {list(df.columns)}")
         
         # Basic validation
         if df.empty:
+            print("DEBUG: DataFrame is empty")
             raise HTTPException(status_code=400, detail="File is empty")
         
         if len(df.columns) == 0:
+            print("DEBUG: No columns found")
             raise HTTPException(status_code=400, detail="No columns found in file")
         
         # Clean column names
@@ -203,21 +219,29 @@ async def upload_file(
             "columns": [{"original": orig, "cleaned": clean} for orig, clean in zip(original_columns, cleaned_columns)]
         }
         
-    except pd.errors.EmptyDataError:
+    except pd.errors.EmptyDataError as e:
+        print(f"DEBUG: EmptyDataError: {str(e)}")
         raise HTTPException(status_code=400, detail="File is empty or corrupted")
     except pd.errors.ParserError as e:
+        print(f"DEBUG: ParserError: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
     except Exception as e:
+        print(f"DEBUG: General exception: {str(e)}")
+        print(f"DEBUG: Exception type: {type(e)}")
+        import traceback
+        print(f"DEBUG: Traceback: {traceback.format_exc()}")
+        
         # Update dataset status to failed if it was created
         try:
             if 'dataset_record' in locals():
+                print(f"DEBUG: Updating dataset status to failed")
                 db.merge(UploadedDatasets(
                     id=dataset_record.id,
                     upload_status='failed'
                 ))
                 db.commit()
-        except:
-            pass
+        except Exception as db_error:
+            print(f"DEBUG: Error updating dataset status: {str(db_error)}")
         
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
 

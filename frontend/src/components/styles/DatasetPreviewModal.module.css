@@ -1,0 +1,131 @@
+.modal {
+  max-width: 92vw !important;
+  max-height: 88vh !important;
+  width: 92vw !important;
+  height: 88vh !important;
+}
+
+.modalContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tableContainer {
+  flex: 1;
+  min-height: 400px;
+  max-height: calc(88vh - 200px);
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+}
+
+.table {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+}
+
+.tableHeader {
+  position: sticky;
+  top: 0;
+  background: #f9fafb;
+  z-index: 10;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.tableHeaderCell {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  min-width: 150px;
+  border-right: 1px solid #e5e7eb;
+}
+
+.tableRow {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.tableRow:hover {
+  background-color: #f9fafb;
+}
+
+.tableCell {
+  padding: 12px 16px;
+  border-right: 1px solid #f3f4f6;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #374151;
+}
+
+.tableCell:hover {
+  background-color: #f3f4f6;
+  cursor: pointer;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: #6b7280;
+}
+
+.loadingSpinner {
+  animation: spin 1s linear infinite;
+  margin-bottom: 8px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: 48px;
+  color: #6b7280;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 20px 0 4px 0;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  min-height: 48px;
+}
+
+@media (max-width: 640px) {
+  .actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal {
+    max-width: 95vw !important;
+    width: 95vw !important;
+    max-height: 95vh !important;
+    height: 95vh !important;
+  }
+}

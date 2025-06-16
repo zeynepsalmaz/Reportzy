@@ -51,20 +51,38 @@ class ApiClient {
   }
 
   async uploadDataset(formData: FormData) {
-    return fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
-      method: 'POST',
-      body: formData,
-    }).then(res => res.json());
+    const url = `${this.baseURL}${API_CONFIG.ENDPOINTS.UPLOAD}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Upload API error:', error);
+      throw error;
+    }
   }
 
   async deleteDataset(id: string) {
-    return this.request(`${API_CONFIG.ENDPOINTS.DELETE_DATASET}/${id}`, {
+    return this.request(`/api/dataset/${id}`, {
       method: 'DELETE',
     });
   }
 
-  async previewDataset(id: string) {
-    return this.request(`${API_CONFIG.ENDPOINTS.PREVIEW_DATASET}/${id}`);
+  async getDeletedDatasets() {
+    return this.request('/api/deleted-datasets');
+  }
+
+  async previewDataset(id: string, limit: number = 10) {
+    return this.request(`${API_CONFIG.ENDPOINTS.PREVIEW_DATASET}/${id}/preview?limit=${limit}`);
   }
 
   async generateInsights(id: string) {
@@ -81,7 +99,50 @@ class ApiClient {
     });
   }
 
-  // API Connection
+  // API Connections
+  async getAPIConnections() {
+    return this.request('/api/api-connections');
+  }
+
+  async createAPIConnection(config: {
+    name: string;
+    connection_type: string;
+    url: string;
+    api_key?: string;
+    headers?: Record<string, string>;
+    auth_config?: Record<string, any>;
+    target_table_name?: string;
+    data_mapping?: Record<string, any>;
+  }) {
+    return this.request('/api/api-connections', {
+      method: 'POST',
+      body: JSON.stringify(config),
+    });
+  }
+
+  async testAPIConnection(id: number) {
+    return this.request(`/api/api-connections/${id}/test`, {
+      method: 'POST',
+    });
+  }
+
+  async syncAPIData(id: number) {
+    return this.request(`/api/api-connections/${id}/sync`, {
+      method: 'POST',
+    });
+  }
+
+  async deleteAPIConnection(id: number) {
+    return this.request(`/api/api-connections/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAPISyncLogs(id: number, limit: number = 10) {
+    return this.request(`/api/api-connections/${id}/sync-logs?limit=${limit}`);
+  }
+
+  // Legacy API Connection (for backward compatibility)
   async connectAPI(config: Record<string, unknown>) {
     return this.request(API_CONFIG.ENDPOINTS.CONNECT_API, {
       method: 'POST',

@@ -8,7 +8,7 @@ export const API_CONFIG = {
     // Datasets
     DATASETS: '/api/datasets',
     UPLOAD: '/api/upload',
-    PREVIEW_DATASET: '/api/preview-dataset',
+    PREVIEW_DATASET: '/api/dataset',
     DELETE_DATASET: '/api/dataset',
     GENERATE_INSIGHTS: '/api/generate-insights',
     

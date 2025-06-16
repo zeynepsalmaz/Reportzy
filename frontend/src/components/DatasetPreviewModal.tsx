@@ -2,43 +2,41 @@
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Download, X } from 'lucide-react';
-import type { Dataset } from '@/types';
+import { Eye, Download, X, Loader2 } from 'lucide-react';
+import type { Dataset, DatasetPreview } from '@/types';
+import styles from './styles/DatasetPreviewModal.module.css';
 
 interface DatasetPreviewModalProps {
   dataset: Dataset | null;
+  previewData: DatasetPreview | null;
   isOpen: boolean;
+  isLoading: boolean;
   onClose: () => void;
 }
 
-export function DatasetPreviewModal({ dataset, isOpen, onClose }: DatasetPreviewModalProps) {
+export function DatasetPreviewModal({ dataset, previewData, isOpen, isLoading, onClose }: DatasetPreviewModalProps) {
   if (!dataset) return null;
 
-  // Mock preview data
-  const mockPreviewData = [
-    { id: 1, name: 'John Doe', email: 'john@example.com', department: 'Sales', salary: 50000 },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', department: 'Marketing', salary: 55000 },
-    { id: 3, name: 'Bob Johnson', email: 'bob@example.com', department: 'IT', salary: 60000 },
-    { id: 4, name: 'Alice Brown', email: 'alice@example.com', department: 'HR', salary: 48000 },
-    { id: 5, name: 'Charlie Wilson', email: 'charlie@example.com', department: 'Finance', salary: 52000 },
-  ];
-
-  const columns = mockPreviewData.length > 0 ? Object.keys(mockPreviewData[0]) : [];
+  const columns = previewData?.columns || [];
+  const rows = previewData?.preview_data || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Eye className="h-5 w-5" />
-            Dataset Preview: {dataset.name}
-          </DialogTitle>
-          <DialogDescription>
-            Showing first 5 rows of {dataset.rowCount.toLocaleString()} total rows
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className={styles.modal}>
+        <div className={styles.modalContent}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Dataset Preview: {dataset.name}
+            </DialogTitle>
+            <DialogDescription>
+              {previewData 
+                ? `Showing first ${rows.length} rows of ${previewData.dataset_info.row_count.toLocaleString()} total rows`
+                : 'Loading preview data...'
+              }
+            </DialogDescription>
+          </DialogHeader>
 
         <div className="space-y-4">
           {/* Dataset Info */}
@@ -60,48 +58,58 @@ export function DatasetPreviewModal({ dataset, isOpen, onClose }: DatasetPreview
           </div>
 
           {/* Preview Table */}
-          <div className="border rounded-lg overflow-auto max-h-96">
-            {mockPreviewData.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
+          <div className={styles.tableContainer}>
+            {isLoading ? (
+              <div className={styles.loadingContainer}>
+                <Loader2 className={`h-6 w-6 ${styles.loadingSpinner}`} />
+                <p>Loading preview data...</p>
+              </div>
+            ) : rows.length > 0 ? (
+              <table className={styles.table}>
+                <thead className={styles.tableHeader}>
+                  <tr>
                     {columns.map((column) => (
-                      <TableHead key={column} className="whitespace-nowrap">
+                      <th key={column} className={styles.tableHeaderCell}>
                         {column}
-                      </TableHead>
+                      </th>
                     ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockPreviewData.map((row, index) => (
-                    <TableRow key={index}>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, index) => (
+                    <tr key={index} className={styles.tableRow}>
                       {columns.map((column) => (
-                        <TableCell key={column} className="whitespace-nowrap">
-                          {String((row as Record<string, unknown>)[column])}
-                        </TableCell>
+                        <td 
+                          key={column} 
+                          className={styles.tableCell}
+                          title={String((row as Record<string, unknown>)[column] ?? '')}
+                        >
+                          {String((row as Record<string, unknown>)[column] ?? '')}
+                        </td>
                       ))}
-                    </TableRow>
+                    </tr>
                   ))}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
             ) : (
-              <div className="p-8 text-center text-gray-500">
-                No preview data available
+              <div className={styles.emptyState}>
+                <p>No preview data available</p>
               </div>
             )}
           </div>
 
           {/* Actions */}
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={onClose}>
-              <X className="h-4 w-4 mr-2" />
+          <div className={styles.actions}>
+            <Button variant="outline" onClick={onClose} size="sm">
+              <X className="h-4 w-4 mr-1" />
               Close
             </Button>
-            <Button>
-              <Download className="h-4 w-4 mr-2" />
-              Export Dataset
+            <Button disabled={!previewData} size="sm">
+              <Download className="h-4 w-4 mr-1" />
+              Export
             </Button>
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

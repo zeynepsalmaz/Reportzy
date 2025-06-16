@@ -10,8 +10,24 @@ export interface Dataset {
   rowCount: number; // Added for compatibility
   columns: number;
   columnCount: number; // Added for compatibility
-  status: 'processing' | 'ready' | 'error' | 'completed';
+  status: 'processing' | 'ready' | 'error' | 'completed' | 'failed';
+  upload_status?: 'processing' | 'completed' | 'failed';
+  upload_progress?: number;
   file_path?: string;
+  table_name?: string;
+  error_message?: string;
+}
+
+export interface DeletedDataset {
+  id: string;
+  dataset_name: string;
+  table_name: string;
+  file_name: string;
+  deleted_at: string;
+  deleted_by?: string;
+  file_size?: number;
+  row_count?: number;
+  column_count?: number;
 }
 
 export interface AnalyticsSummary {
@@ -40,12 +56,27 @@ export interface AIQuery {
 }
 
 export interface APIConnection {
-  id: string;
+  id: number;
   name: string;
-  endpoint: string;
+  type: 'rest' | 'graphql' | 'database';
+  url: string;
   status: 'connected' | 'disconnected' | 'error';
   last_sync?: string;
+  target_table_name?: string;
+  created_at?: string;
+  api_key?: string;
   headers?: Record<string, string>;
+  auth_config?: Record<string, any>;
+  data_mapping?: Record<string, any>;
+}
+
+export interface APISyncLog {
+  id: number;
+  sync_status: 'success' | 'failed' | 'in_progress';
+  records_synced?: number;
+  error_message?: string;
+  sync_duration?: number;
+  created_at: string;
 }
 
 export interface DashboardStats {
@@ -114,4 +145,17 @@ export interface QueryResult {
   success: boolean;
   error?: string;
   execution_time?: number;
+}
+
+export interface DatasetPreview {
+  success: boolean;
+  dataset_info: {
+    id: number;
+    name: string;
+    table_name: string;
+    row_count: number;
+    column_count: number;
+  };
+  columns: string[];
+  preview_data: Record<string, unknown>[];
 }

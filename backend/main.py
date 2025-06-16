@@ -15,6 +15,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ai.ask import ask_router
 from ai.ai_insights import insights_router
+from api_connections import router as api_connections_router
 
 # Initialize database tables on startup
 init_database()
@@ -37,6 +38,7 @@ app.include_router(export_router, prefix="/api", tags=["Data Export"])
 app.include_router(metadata_router, prefix="/api", tags=["Metadata Management"])
 app.include_router(upload_router, prefix="/api", tags=["File Upload"])
 app.include_router(insights_router, prefix="/api", tags=["AI Insights"])
+app.include_router(api_connections_router, prefix="/api", tags=["API Connections"])
 
 # Health check endpoint
 @app.get("/health")
