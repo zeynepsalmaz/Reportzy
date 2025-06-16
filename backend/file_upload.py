@@ -10,8 +10,8 @@ from sqlalchemy import text, inspect
 from sqlalchemy.orm import Session
 import json
 
-from .db import engine, get_db
-from .models import UploadedDatasets, TableMetadata, AIInsights, QueryLog, DeletionLog
+from db import engine, get_db
+from models import UploadedDatasets, TableMetadata, AIInsights, QueryLog, DeletionLog
 
 upload_router = APIRouter()
 

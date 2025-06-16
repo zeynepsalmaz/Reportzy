@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from .db import engine, get_db
+from db import engine, get_db
 
 export_router = APIRouter()
 

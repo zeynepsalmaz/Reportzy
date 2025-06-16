@@ -5,11 +5,11 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
-from .export import export_router
-from .metadata import metadata_router
-from .file_upload import upload_router
-from .dashboard import dashboard_router
-from .db import engine, init_database
+from export import export_router
+from metadata import metadata_router
+from file_upload import upload_router
+from dashboard import dashboard_router
+from db import engine, init_database
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -60,3 +60,16 @@ async def root():
         "docs": "/docs",
         "health": "/health"
     }
+
+# Direct execution
+if __name__ == "__main__":
+    import uvicorn
+    print("Starting Reportzy Analytics Backend...")
+    print("Backend API will be available at: http://localhost:8000")
+    print("API Documentation: http://localhost:8000/docs")
+    
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000
+    )
