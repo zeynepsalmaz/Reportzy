@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAppStore } from '@/store/app-store';
 import { apiClient } from '@/lib/api-client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart3, 
   Database, 
@@ -21,7 +21,7 @@ import {
   CheckCircle,
   Activity
 } from 'lucide-react';
-import type { DashboardStats, Dataset, AIQuery } from '@/types';
+import type { DashboardStats, AIQuery } from '@/types';
 
 export default function DashboardPage() {
   const { datasets, addNotification } = useAppStore();
@@ -36,20 +36,22 @@ export default function DashboardPage() {
   const [isQuerying, setIsQuerying] = useState(false);
   const [queryHistory, setQueryHistory] = useState<AIQuery[]>([]);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await apiClient.getDashboardStats() as {
+      console.log('Loading dashboard data...');
+      
+      const response = await apiClient.getDashboardStats();
+      console.log('Dashboard stats response:', response);
+      
+      setStats(response as {
         totalRecords: number;
         activeTables: number;
         queriesToday: number;
         aiInsights: number;
-      };
-      setStats(response);
+      });
+      
+      console.log('Dashboard data loaded successfully');
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       addNotification({
@@ -58,9 +60,14 @@ export default function DashboardPage() {
         message: 'Failed to load dashboard statistics'
       });
     } finally {
+      console.log('Setting loading to false');
       setIsLoading(false);
     }
-  };
+  }, [addNotification]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   const handleQuery = async () => {
     if (!query.trim()) return;
