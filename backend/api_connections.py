@@ -1,15 +1,14 @@
-from fastfrom db import get_db, engine
-from models import APIConnections, APISyncLogi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, update
 import requests
 import json
 from datetime import datetime
 from typing import Optional, Dict, Any
 from pydantic import BaseModel
 
-from .db import get_db, engine
-from .models import APIConnections, APISyncLog
+from db import get_db, engine
+from models import APIConnections, APISyncLog
 import pandas as pd
 
 router = APIRouter()
@@ -47,9 +46,9 @@ async def get_api_connections(db: Session = Depends(get_db)):
                     "type": conn.connection_type,
                     "url": conn.url,
                     "status": conn.status,
-                    "last_sync": conn.last_sync.isoformat() if conn.last_sync else None,
+                    "last_sync": conn.last_sync.isoformat() if conn.last_sync is not None else None,
                     "target_table_name": conn.target_table_name,
-                    "created_at": conn.created_at.isoformat() if conn.created_at else None
+                    "created_at": conn.created_at.isoformat() if conn.created_at is not None else None
                 }
                 for conn in connections
             ]
@@ -98,15 +97,23 @@ async def test_api_connection(connection_id: int, db: Session = Depends(get_db))
             raise HTTPException(status_code=404, detail="API connection not found")
         
         # Test the connection based on type
-        if connection.connection_type == 'rest':
-            headers = connection.headers or {}
-            if connection.api_key:
+        if str(connection.connection_type) == 'rest':
+            headers = {}
+            if connection.headers is not None:
+                # Safely convert headers to dict
+                if isinstance(connection.headers, dict):
+                    headers.update(connection.headers)
+            if connection.api_key is not None:
                 headers['Authorization'] = f"Bearer {connection.api_key}"
             
-            response = requests.get(connection.url, headers=headers, timeout=10)
+            response = requests.get(str(connection.url), headers=headers, timeout=10)
             if response.status_code == 200:
-                connection.status = 'connected'
-                connection.last_sync = datetime.now()
+                # Update connection status using SQLAlchemy update
+                db.execute(
+                    update(APIConnections)
+                    .where(APIConnections.id == connection_id)
+                    .values(status='connected', last_sync=datetime.now())
+                )
                 db.commit()
                 
                 return {
@@ -115,7 +122,12 @@ async def test_api_connection(connection_id: int, db: Session = Depends(get_db))
                     "message": "Connection successful"
                 }
             else:
-                connection.status = 'error'
+                # Update connection status to error
+                db.execute(
+                    update(APIConnections)
+                    .where(APIConnections.id == connection_id)
+                    .values(status='error')
+                )
                 db.commit()
                 return {
                     "success": False,
@@ -130,7 +142,12 @@ async def test_api_connection(connection_id: int, db: Session = Depends(get_db))
             }
             
     except requests.RequestException as e:
-        connection.status = 'error'
+        # Update connection status to error
+        db.execute(
+            update(APIConnections)
+            .where(APIConnections.id == connection_id)
+            .values(status='error')
+        )
         db.commit()
         return {
             "success": False,
@@ -148,7 +165,7 @@ async def sync_api_data(connection_id: int, db: Session = Depends(get_db)):
         if not connection:
             raise HTTPException(status_code=404, detail="API connection not found")
         
-        if connection.connection_type != 'rest':
+        if str(connection.connection_type) != 'rest':
             raise HTTPException(status_code=400, detail="Only REST API sync is currently supported")
         
         # Create sync log entry
@@ -158,16 +175,21 @@ async def sync_api_data(connection_id: int, db: Session = Depends(get_db)):
         )
         db.add(sync_log)
         db.commit()
+        db.refresh(sync_log)
         
         start_time = datetime.now()
         
         try:
             # Fetch data from API
-            headers = connection.headers or {}
-            if connection.api_key:
+            headers = {}
+            if connection.headers is not None:
+                # Safely convert headers to dict
+                if isinstance(connection.headers, dict):
+                    headers.update(connection.headers)
+            if connection.api_key is not None:
                 headers['Authorization'] = f"Bearer {connection.api_key}"
             
-            response = requests.get(connection.url, headers=headers, timeout=30)
+            response = requests.get(str(connection.url), headers=headers, timeout=30)
             response.raise_for_status()
             
             data = response.json()
@@ -197,18 +219,27 @@ async def sync_api_data(connection_id: int, db: Session = Depends(get_db)):
             ]
             
             # Save to database table
-            table_name = connection.target_table_name
+            table_name = str(connection.target_table_name)
             df.to_sql(table_name, engine, if_exists='replace', index=False)
             
             # Update connection status
-            connection.status = 'connected'
-            connection.last_sync = datetime.now()
+            db.execute(
+                update(APIConnections)
+                .where(APIConnections.id == connection_id)
+                .values(status='connected', last_sync=datetime.now())
+            )
             
             # Update sync log
             sync_duration = (datetime.now() - start_time).total_seconds()
-            sync_log.sync_status = 'success'
-            sync_log.records_synced = len(df)
-            sync_log.sync_duration = sync_duration
+            db.execute(
+                update(APISyncLog)
+                .where(APISyncLog.id == sync_log.id)
+                .values(
+                    sync_status='success',
+                    records_synced=len(df),
+                    sync_duration=sync_duration
+                )
+            )
             
             db.commit()
             
@@ -222,11 +253,23 @@ async def sync_api_data(connection_id: int, db: Session = Depends(get_db)):
             
         except Exception as sync_error:
             # Update sync log with error
-            sync_log.sync_status = 'failed'
-            sync_log.error_message = str(sync_error)
-            sync_log.sync_duration = (datetime.now() - start_time).total_seconds()
+            sync_duration = (datetime.now() - start_time).total_seconds()
+            db.execute(
+                update(APISyncLog)
+                .where(APISyncLog.id == sync_log.id)
+                .values(
+                    sync_status='failed',
+                    error_message=str(sync_error),
+                    sync_duration=sync_duration
+                )
+            )
             
-            connection.status = 'error'
+            # Update connection status to error
+            db.execute(
+                update(APIConnections)
+                .where(APIConnections.id == connection_id)
+                .values(status='error')
+            )
             db.commit()
             
             raise sync_error
@@ -242,8 +285,8 @@ async def delete_api_connection(connection_id: int, db: Session = Depends(get_db
         if not connection:
             raise HTTPException(status_code=404, detail="API connection not found")
         
-        connection_name = connection.name
-        table_name = connection.target_table_name
+        connection_name = str(connection.name)
+        table_name = str(connection.target_table_name)
         
         # Optionally drop the table (be careful with this!)
         # with engine.connect() as conn:
@@ -277,7 +320,7 @@ async def get_sync_logs(connection_id: int, limit: int = 10, db: Session = Depen
                     "records_synced": log.records_synced,
                     "error_message": log.error_message,
                     "sync_duration": log.sync_duration,
-                    "created_at": log.created_at.isoformat() if log.created_at else None
+                    "created_at": log.created_at.isoformat() if log.created_at is not None else None
                 }
                 for log in logs
             ]

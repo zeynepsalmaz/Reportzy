@@ -20,6 +20,7 @@ class AskRequest(BaseModel):
 
 class AskResponse(BaseModel):
     question: str
+    answer: str = ""  # Add answer field for frontend compatibility
     sql_query: str
     results: List[Dict[str, Any]]
     chart_data: Dict[str, Any]
@@ -47,14 +48,17 @@ def generate_sql_query(question: str) -> str:
     # Get available tables dynamically
     try:
         with engine.connect() as conn:
+            # SQLite syntax for getting table names
             result = conn.execute(text("""
-                SELECT table_name FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_type = 'BASE TABLE'
-                AND table_name NOT IN ('query_logs', 'table_metadata')
+                SELECT name FROM sqlite_master 
+                WHERE type='table' 
+                AND name NOT IN ('query_logs', 'table_metadata', 'ai_insights', 'uploaded_datasets', 
+                                'deletion_logs', 'api_connections', 'api_sync_logs', 'sqlite_sequence')
             """))
             available_tables = [row[0] for row in result.fetchall()]
-    except:
+            print(f"Found tables: {available_tables}")  # Debug log
+    except Exception as e:
+        print(f"Error getting tables: {e}")  # Debug log
         available_tables = []
     
     if not available_tables:
@@ -85,28 +89,32 @@ def generate_sql_query(question: str) -> str:
         try:
             with engine.connect() as conn:
                 for table in available_tables:
-                    schema_result = conn.execute(text("""
-                        SELECT column_name, data_type 
-                        FROM information_schema.columns 
-                        WHERE table_name = :table_name AND table_schema = 'public'
-                        ORDER BY ordinal_position
-                    """), {"table_name": table})
+                    # SQLite syntax for getting column info
+                    schema_result = conn.execute(text(f"PRAGMA table_info({table})"))
                     
-                    columns = [f"{row[0]} ({row[1]})" for row in schema_result.fetchall()]
+                    columns = []
+                    for row in schema_result.fetchall():
+                        # row structure: (cid, name, type, notnull, dflt_value, pk)
+                        col_name = row[1]
+                        col_type = row[2]
+                        columns.append(f"{col_name} ({col_type})")
+                    
                     table_schemas += f"- {table}: {', '.join(columns)}\n"
-        except:
+                    print(f"Table {table} columns: {columns}")  # Debug log
+        except Exception as e:
+            print(f"Error getting schema: {e}")  # Debug log
             table_schemas = f"- {default_table}: (columns unknown)\n"
         
         prompt = f"""
-        Convert the following natural language question to a SQL query for a PostgreSQL database.
+        Convert the following natural language question to a SQL query for a SQLite database.
         
         Available tables and schemas:
         {table_schemas}
         
         Guidelines:
         - Use appropriate table names from the list above
-        - For numeric calculations, use CAST(column AS DECIMAL) or column::numeric
-        - Use proper PostgreSQL syntax
+        - For numeric calculations, use CAST(column AS REAL) for SQLite
+        - Use proper SQLite syntax
         - Return only the SQL query, no explanation
         - If asking for "all" or general data, limit to 20 rows
         - For aggregations, include meaningful column aliases
@@ -135,13 +143,85 @@ def generate_sql_query(question: str) -> str:
         
     except Exception as e:
         print(f"Error generating SQL with LLM: {e}")
-        print("Falling back to default query...")
+        print("Falling back to pattern matching...")
         
-        # Ultimate fallback - show data from first available table
-        if available_tables:
-            return f"SELECT * FROM {default_table} LIMIT 10"
+        # Intelligent fallback with pattern matching
+        selected_table = default_table
+        question_lower = question.lower()
         
-        return "SELECT 'No data available. Please upload a CSV or Excel file first.' as message"
+        # Try to match table name in question
+        for table in available_tables:
+            if table.lower() in question_lower:
+                selected_table = table
+                break
+        
+        # Pattern-based table selection
+        if not selected_table or selected_table == default_table:
+            # Look for common data keywords to select appropriate table
+            table_keywords = {
+                'employees': ['employee', 'staff', 'worker', 'person', 'people', 'name', 'salary', 'age'],
+                'sales': ['sale', 'revenue', 'order', 'customer', 'purchase', 'transaction'],
+                'products': ['product', 'item', 'inventory', 'stock', 'catalog'],
+                'users': ['user', 'account', 'profile', 'member'],
+                'data': ['data', 'record', 'entry']
+            }
+            
+            for table in available_tables:
+                table_lower = table.lower()
+                # Check if table name matches any keyword category
+                for category, keywords in table_keywords.items():
+                    if category in table_lower or any(keyword in question_lower for keyword in keywords):
+                        if table_lower == category or any(keyword in table_lower for keyword in keywords):
+                            selected_table = table
+                            break
+                if selected_table != default_table:
+                    break
+        
+        print(f"Selected table for fallback: {selected_table}")
+        
+        # Generate appropriate SQL based on question pattern
+        if any(word in question_lower for word in ['show', 'display', 'list', 'all']):
+            return f"SELECT * FROM {selected_table} LIMIT 10"
+        elif any(word in question_lower for word in ['count', 'how many', 'number']):
+            return f"SELECT COUNT(*) as total_count FROM {selected_table}"
+        elif any(word in question_lower for word in ['top', 'highest', 'maximum', 'max']):
+            # Try to find numeric columns for ordering
+            try:
+                with engine.connect() as conn:
+                    schema_result = conn.execute(text(f"PRAGMA table_info({selected_table})"))
+                    numeric_cols = []
+                    for row in schema_result.fetchall():
+                        col_name = row[1]
+                        col_type = row[2].upper()
+                        if 'INT' in col_type or 'REAL' in col_type or 'NUMERIC' in col_type:
+                            numeric_cols.append(col_name)
+                    
+                    if numeric_cols:
+                        order_col = numeric_cols[0]  # Use first numeric column
+                        return f"SELECT * FROM {selected_table} ORDER BY {order_col} DESC LIMIT 10"
+            except:
+                pass
+            return f"SELECT * FROM {selected_table} LIMIT 10"
+        elif any(word in question_lower for word in ['average', 'avg', 'mean']):
+            # Try to find numeric columns for averaging
+            try:
+                with engine.connect() as conn:
+                    schema_result = conn.execute(text(f"PRAGMA table_info({selected_table})"))
+                    numeric_cols = []
+                    for row in schema_result.fetchall():
+                        col_name = row[1]
+                        col_type = row[2].upper()
+                        if 'INT' in col_type or 'REAL' in col_type or 'NUMERIC' in col_type:
+                            numeric_cols.append(col_name)
+                    
+                    if numeric_cols:
+                        avg_queries = [f"AVG(CAST({col} AS REAL)) as avg_{col}" for col in numeric_cols]
+                        return f"SELECT {', '.join(avg_queries)} FROM {selected_table}"
+            except:
+                pass
+            return f"SELECT * FROM {selected_table} LIMIT 10"
+        else:
+            return f"SELECT * FROM {selected_table} LIMIT 10"
 
 def execute_sql_query(sql_query: str) -> List[Dict[str, Any]]:
     """Execute SQL query and return results"""
@@ -283,6 +363,7 @@ async def ask_question(request: AskRequest, db: Session = Depends(get_db)):
             suggestion = get_query_suggestions(question)
             return AskResponse(
                 question=question,
+                answer="No data found. Please upload a dataset first.",
                 sql_query="",
                 results=[],
                 chart_data={"labels": [], "datasets": [], "chartType": "bar"},
@@ -297,6 +378,7 @@ async def ask_question(request: AskRequest, db: Session = Depends(get_db)):
         except Exception as e:
             return AskResponse(
                 question=question,
+                answer=f"Query execution failed: {str(e)}",
                 sql_query=sql_query,
                 results=[],
                 chart_data={"labels": [], "datasets": [], "chartType": "bar"},
@@ -307,11 +389,23 @@ async def ask_question(request: AskRequest, db: Session = Depends(get_db)):
         # Generate chart data
         chart_data = generate_chart_data(results)
         
+        # Create meaningful answer based on results
+        answer = f"Found {len(results)} result(s)"
+        if len(results) == 1 and len(results[0]) == 1:
+            # Single value result (like COUNT)
+            value = list(results[0].values())[0]
+            key = list(results[0].keys())[0]
+            answer = f"{key}: {value}"
+        elif len(results) > 0:
+            # Multiple results
+            answer = f"Retrieved {len(results)} records from the database"
+        
         # Log the query
         log_query(db, question, sql_query, results)
         
         return AskResponse(
             question=question,
+            answer=answer,
             sql_query=sql_query,
             results=results,
             chart_data=chart_data,
@@ -321,6 +415,7 @@ async def ask_question(request: AskRequest, db: Session = Depends(get_db)):
     except Exception as e:
         return AskResponse(
             question=question,
+            answer=f"An error occurred: {str(e)}",
             sql_query="",
             results=[],
             chart_data={"labels": [], "datasets": [], "chartType": "bar"},

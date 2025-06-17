@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 # Load .env variables
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://localhost:5432/reportzy")
+# Use SQLite database in the project root
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./reportzy.db")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
